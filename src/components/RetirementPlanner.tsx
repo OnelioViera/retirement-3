@@ -278,6 +278,24 @@ export default function RetirementPlanner() {
     loadData();
   }, []);
 
+  // Auto-calculate new mortgage amount when future home price or down payment changes
+  useEffect(() => {
+    if (data.mortgage.future > 0 && data.mortgage.downPayment >= 0) {
+      const newMortgageAmount =
+        data.mortgage.future - data.mortgage.downPayment;
+      if (newMortgageAmount !== data.mortgage.newMortgage) {
+        updateMortgage("newMortgage", Math.max(0, newMortgageAmount));
+      }
+    }
+  }, [data.mortgage.future, data.mortgage.downPayment]);
+
+  // Auto-hide mortgage details when mortgage section is expanded
+  useEffect(() => {
+    if (mortgageExpanded && mortgageDetailsExpanded) {
+      setMortgageDetailsExpanded(false);
+    }
+  }, [mortgageExpanded]);
+
   // Save data to database
   const saveData = async () => {
     setSaving(true);
@@ -1051,12 +1069,12 @@ export default function RetirementPlanner() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="newMortgage">New Mortgage Amount</Label>
-                    <CurrencyInput
-                      id="newMortgage"
-                      value={data.mortgage.newMortgage}
-                      onChange={(value) => updateMortgage("newMortgage", value)}
-                      placeholder="0"
-                    />
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900">
+                      {formatCurrency(data.mortgage.newMortgage)}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Automatically calculated: Future Home Price - Down Payment
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="interestRate">Interest Rate</Label>
@@ -1120,29 +1138,31 @@ export default function RetirementPlanner() {
                     {formatCurrency(calculateTotalMonthlyMortgageCost())}
                   </span>
                 </div>
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setMortgageDetailsExpanded(!mortgageDetailsExpanded)
-                    }
-                    className="text-xs text-gray-600 hover:text-gray-800"
-                  >
-                    {mortgageDetailsExpanded ? (
-                      <>
-                        <ChevronUp className="h-3 w-3 mr-1" />
-                        Hide Details
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-3 w-3 mr-1" />
-                        Show Details
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {mortgageDetailsExpanded && (
+                {!mortgageExpanded && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setMortgageDetailsExpanded(!mortgageDetailsExpanded)
+                      }
+                      className="text-xs text-gray-600 hover:text-gray-800"
+                    >
+                      {mortgageDetailsExpanded ? (
+                        <>
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          Hide Details
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          Show Details
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                {!mortgageExpanded && mortgageDetailsExpanded && (
                   <div className="grid grid-cols-1 gap-2 bg-gray-50 p-3 rounded-md">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">
