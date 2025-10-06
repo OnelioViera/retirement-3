@@ -470,7 +470,7 @@ export default function RetirementPlanner() {
     const newId = `income_${Date.now()}`;
     setData((prev) => ({
       ...prev,
-      income: [...prev.income, { id: newId, name: "New Income", amount: 0 }],
+      income: [...prev.income, { id: newId, name: "", amount: 0 }],
     }));
   };
 
@@ -518,7 +518,7 @@ export default function RetirementPlanner() {
       ...prev,
       savings: [
         ...prev.savings,
-        { id: newId, name: "New Savings", amount: 0, type: "total" },
+        { id: newId, name: "", amount: 0, type: "total" },
       ],
     }));
   };
@@ -714,16 +714,14 @@ export default function RetirementPlanner() {
                             placeholder="Income source name"
                           />
                         </Label>
-                        {data.income.length > 1 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeIncomeItem(item.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeIncomeItem(item.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                       <CurrencyInput
                         id={`income-amount-${item.id}`}
