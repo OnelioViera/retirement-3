@@ -69,16 +69,16 @@ interface RetirementData {
 export default function RetirementPlanner() {
   const [data, setData] = useState<RetirementData>({
     income: [
-      { id: "onelio", name: "Onelio Social Security (Age 70)", amount: 3171 },
-      { id: "polly", name: "Polly Social Security (Age 62)", amount: 1036 },
-      { id: "pension", name: "Pension", amount: 738 },
+      { id: "onelio", name: "Onelio Social Security (Age 70)", amount: 0 },
+      { id: "polly", name: "Polly Social Security (Age 62)", amount: 0 },
+      { id: "pension", name: "Pension", amount: 0 },
     ],
     expenses: [
-      { id: "mortgage", name: "Mortgage", amount: 1500 },
-      { id: "food", name: "Food", amount: 600 },
-      { id: "gas", name: "Gas", amount: 100 },
-      { id: "utilities", name: "Utilities", amount: 150 },
-      { id: "healthIns", name: "Health Insurance", amount: 200 },
+      { id: "mortgage", name: "Mortgage", amount: 0 },
+      { id: "food", name: "Food", amount: 0 },
+      { id: "gas", name: "Gas", amount: 0 },
+      { id: "utilities", name: "Utilities", amount: 0 },
+      { id: "healthIns", name: "Health Insurance", amount: 0 },
       { id: "houseMaint", name: "House Maintenance", amount: 0 },
       { id: "carMaint", name: "Car Maintenance", amount: 0 },
       { id: "internet", name: "Internet", amount: 0 },
@@ -158,6 +158,25 @@ export default function RetirementPlanner() {
                 amount: planData.income.pension || 0,
               },
             ];
+          } else if (!planData.income || planData.income.length === 0) {
+            // Populate with default structure if empty
+            planData.income = [
+              {
+                id: "onelio",
+                name: "Onelio Social Security (Age 70)",
+                amount: 0,
+              },
+              {
+                id: "polly",
+                name: "Polly Social Security (Age 62)",
+                amount: 0,
+              },
+              {
+                id: "pension",
+                name: "Pension",
+                amount: 0,
+              },
+            ];
           }
 
           if (planData.expenses && !Array.isArray(planData.expenses)) {
@@ -205,6 +224,20 @@ export default function RetirementPlanner() {
                 amount: planData.expenses.carIns || 0,
               },
             ];
+          } else if (!planData.expenses || planData.expenses.length === 0) {
+            // Populate with default structure if empty
+            planData.expenses = [
+              { id: "mortgage", name: "Mortgage", amount: 0 },
+              { id: "food", name: "Food", amount: 0 },
+              { id: "gas", name: "Gas", amount: 0 },
+              { id: "utilities", name: "Utilities", amount: 0 },
+              { id: "healthIns", name: "Health Insurance", amount: 0 },
+              { id: "houseMaint", name: "House Maintenance", amount: 0 },
+              { id: "carMaint", name: "Car Maintenance", amount: 0 },
+              { id: "internet", name: "Internet", amount: 0 },
+              { id: "cellphone", name: "Cell Phone", amount: 0 },
+              { id: "carIns", name: "Car Insurance", amount: 0 },
+            ];
           }
 
           // Handle savings migration - only create defaults if needed
@@ -230,8 +263,29 @@ export default function RetirementPlanner() {
                 type: "total",
               },
             ];
+          } else if (planData.savings.length === 0) {
+            // Populate with default structure if empty
+            planData.savings = [
+              {
+                id: "pollySS",
+                name: "Polly SS Savings Total",
+                amount: 0,
+                type: "total",
+              },
+              {
+                id: "k401",
+                name: "401K Monthly Contribution",
+                amount: 0,
+                type: "annual",
+              },
+              {
+                id: "synchrony",
+                name: "Synchrony Account",
+                amount: 0,
+                type: "total",
+              },
+            ];
           }
-          // If planData.savings is an empty array, leave it empty - don't recreate defaults
 
           // Ensure savingsYears is set
           planData.savingsYears = planData.savingsYears || 1;

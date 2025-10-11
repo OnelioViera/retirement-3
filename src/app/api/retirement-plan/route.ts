@@ -10,8 +10,24 @@ export async function GET() {
     const plan = await RetirementPlan.findOne().sort({ createdAt: -1 });
 
     if (!plan) {
-      // Create a default plan if none exists
-      const defaultPlan = new RetirementPlan();
+      // Create a default plan with empty arrays if none exists
+      const defaultPlan = new RetirementPlan({
+        income: [],
+        expenses: [],
+        savings: [],
+        savingsYears: 1,
+        mortgage: {
+          current: 0,
+          future: 0,
+          downPayment: 0,
+          newMortgage: 0,
+          monthlyTax: 0,
+          monthlyInsurance: 0,
+          monthlyHOA: 0,
+          interestRate: 0,
+          financingYears: 30,
+        },
+      });
       await defaultPlan.save();
       return NextResponse.json(defaultPlan);
     }
