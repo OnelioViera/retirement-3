@@ -25,9 +25,11 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Download,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import jsPDF from "jspdf";
 
 interface IncomeItem {
   id: string;
@@ -434,6 +436,279 @@ export default function RetirementPlanner() {
     }
   };
 
+  // Download PDF function
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    let yPos = margin;
+
+    // Helper function to add text with wrapping
+    const addText = (
+      text: string,
+      x: number,
+      size: number = 10,
+      style: "normal" | "bold" = "normal"
+    ) => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", style);
+      doc.text(text, x, yPos);
+      yPos += size * 0.5;
+    };
+
+    // Helper function to check if we need a new page
+    const checkNewPage = (spaceNeeded: number = 20) => {
+      if (yPos + spaceNeeded > pageHeight - margin) {
+        doc.addPage();
+        yPos = margin;
+        return true;
+      }
+      return false;
+    };
+
+    // Title
+    doc.setFillColor(79, 70, 229); // Indigo color
+    doc.rect(0, 0, pageWidth, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("Retirement Financial Plan", pageWidth / 2, 25, {
+      align: "center",
+    });
+    doc.setTextColor(0, 0, 0);
+    yPos = 50;
+
+    // Date
+    const currentDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    addText(`Generated: ${currentDate}`, margin, 10, "normal");
+    yPos += 5;
+
+    // Financial Summary Section
+    checkNewPage(60);
+    addText("FINANCIAL SUMMARY", margin, 14, "bold");
+    yPos += 5;
+
+    const displayIncome =
+      incomeFrequency === "monthly" ? totalMonthlyIncome : totalDisplayIncome;
+    const displayExpenses =
+      incomeFrequency === "monthly"
+        ? totalMonthlyExpenses
+        : totalMonthlyExpenses * 12;
+    const displayBalance = displayIncome - displayExpenses;
+
+    addText(
+      `${incomeFrequency === "monthly" ? "Monthly" : "Annual"} Income: ${formatCurrency(displayIncome)}`,
+      margin + 5,
+      11,
+      "normal"
+    );
+    addText(
+      `${incomeFrequency === "monthly" ? "Monthly" : "Annual"} Expenses: ${formatCurrency(displayExpenses)}`,
+      margin + 5,
+      11,
+      "normal"
+    );
+    addText(
+      `${incomeFrequency === "monthly" ? "Monthly" : "Annual"} Balance: ${formatCurrency(displayBalance)}`,
+      margin + 5,
+      11,
+      "bold"
+    );
+    addText(
+      `Projected Savings (${data.savingsYears} year${data.savingsYears !== 1 ? "s" : ""}): ${formatCurrency(totalSavings * data.savingsYears)}`,
+      margin + 5,
+      11,
+      "bold"
+    );
+    yPos += 10;
+
+    // Income Section
+    checkNewPage(40);
+    addText("INCOME SOURCES", margin, 14, "bold");
+    yPos += 5;
+
+    if (data.income.length > 0) {
+      data.income.forEach((item) => {
+        checkNewPage(15);
+        addText(
+          `• ${item.name}: ${formatCurrency(item.amount)}`,
+          margin + 5,
+          10,
+          "normal"
+        );
+      });
+    } else {
+      addText("No income sources added", margin + 5, 10, "normal");
+    }
+    addText(
+      `Total ${incomeFrequency === "monthly" ? "Monthly" : "Annual"} Income: ${formatCurrency(totalDisplayIncome)}`,
+      margin + 5,
+      11,
+      "bold"
+    );
+    yPos += 10;
+
+    // Expenses Section
+    checkNewPage(40);
+    addText("MONTHLY EXPENSES", margin, 14, "bold");
+    yPos += 5;
+
+    // Mortgage
+    const mortgagePayment = calculateTotalMonthlyMortgageCost();
+    addText(
+      `• Mortgage Payment (Auto-calculated): ${formatCurrency(mortgagePayment)}`,
+      margin + 5,
+      10,
+      "normal"
+    );
+
+    // Other expenses
+    data.expenses
+      .filter((item) => item.id !== "mortgage")
+      .forEach((item) => {
+        checkNewPage(15);
+        addText(
+          `• ${item.name}: ${formatCurrency(item.amount)}`,
+          margin + 5,
+          10,
+          "normal"
+        );
+      });
+
+    addText(
+      `Total Monthly Expenses: ${formatCurrency(totalMonthlyExpenses)}`,
+      margin + 5,
+      11,
+      "bold"
+    );
+    yPos += 10;
+
+    // Mortgage Details Section
+    if (data.mortgage.future > 0 || data.mortgage.newMortgage > 0) {
+      checkNewPage(80);
+      addText("MORTGAGE INFORMATION", margin, 14, "bold");
+      yPos += 5;
+
+      addText(
+        `Future Home Price: ${formatCurrency(data.mortgage.future)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Down Payment: ${formatCurrency(data.mortgage.downPayment)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `New Mortgage Amount: ${formatCurrency(data.mortgage.newMortgage)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Interest Rate: ${data.mortgage.interestRate}%`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Financing Years: ${data.mortgage.financingYears}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Monthly Tax: ${formatCurrency(data.mortgage.monthlyTax)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Monthly Insurance: ${formatCurrency(data.mortgage.monthlyInsurance)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      addText(
+        `Monthly HOA: ${formatCurrency(data.mortgage.monthlyHOA)}`,
+        margin + 5,
+        10,
+        "normal"
+      );
+      yPos += 5;
+      addText(
+        `Monthly Mortgage Payment: ${formatCurrency(calculateMonthlyMortgagePayment())}`,
+        margin + 5,
+        11,
+        "bold"
+      );
+      addText(
+        `Total Monthly Payment: ${formatCurrency(calculateTotalMonthlyMortgageCost())}`,
+        margin + 5,
+        11,
+        "bold"
+      );
+      yPos += 10;
+    }
+
+    // Savings Section
+    if (data.savings.length > 0) {
+      checkNewPage(40);
+      addText("SAVINGS & INVESTMENTS", margin, 14, "bold");
+      yPos += 5;
+
+      data.savings.forEach((item) => {
+        checkNewPage(15);
+        const typeLabel = item.type === "annual" ? " (Annual)" : " (Total)";
+        addText(
+          `• ${item.name}${typeLabel}: ${formatCurrency(item.amount)}`,
+          margin + 5,
+          10,
+          "normal"
+        );
+      });
+      addText(
+        `Total Savings: ${formatCurrency(totalSavings)}`,
+        margin + 5,
+        11,
+        "bold"
+      );
+      addText(
+        `Projected Total (${data.savingsYears} years): ${formatCurrency(totalSavings * data.savingsYears)}`,
+        margin + 5,
+        11,
+        "bold"
+      );
+      yPos += 10;
+    }
+
+    // Footer
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, {
+        align: "center",
+      });
+      doc.text("Retirement Financial Planner", margin, pageHeight - 10);
+    }
+
+    // Save the PDF
+    doc.save(`Retirement_Plan_${new Date().toISOString().split("T")[0]}.pdf`);
+
+    toast.success("📄 PDF downloaded successfully!", {
+      duration: 3000,
+    });
+  };
+
   // Mortgage calculation functions
   const calculateMonthlyMortgagePayment = () => {
     const principal = data.mortgage.newMortgage;
@@ -494,12 +769,12 @@ export default function RetirementPlanner() {
       sum + (incomeFrequency === "monthly" ? item.amount : item.amount * 12)
     );
   }, 0);
-  const totalMonthlyExpenses = data.expenses.reduce((sum, item) => {
-    if (item.id === "mortgage") {
-      return sum + calculateTotalMonthlyMortgageCost();
-    }
-    return sum + item.amount;
-  }, 0);
+  // Calculate total monthly expenses including mortgage and other expenses
+  const otherExpensesTotal = data.expenses
+    .filter((item) => item.id !== "mortgage")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const totalMonthlyExpenses =
+    calculateTotalMonthlyMortgageCost() + otherExpensesTotal;
 
   // Dashboard calculations (always monthly, independent of income frequency)
   const dashboardMonthlyIncome = data.income.reduce(
@@ -649,18 +924,27 @@ export default function RetirementPlanner() {
             <TrendingUp className="text-indigo-600" size={40} />
             Retirement Financial Planner
           </h1>
-          <Button
-            onClick={saveData}
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            {saving ? "Saving..." : "Save Plan"}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={downloadPDF}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+            <Button
+              onClick={saveData}
+              disabled={saving}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {saving ? "Saving..." : "Save Plan"}
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards Toggle */}
@@ -871,49 +1155,53 @@ export default function RetirementPlanner() {
             <CardContent className="space-y-4">
               {expensesExpanded && (
                 <>
-                  {data.expenses.map((item, index) => (
-                    <div key={item.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor={`expense-name-${item.id}`}
-                          className="flex-1"
-                        >
-                          <Input
-                            id={`expense-name-${item.id}`}
-                            value={item.name}
-                            onChange={(e) =>
-                              updateExpenseItem(item.id, "name", e.target.value)
-                            }
-                            className="text-sm font-medium"
-                            placeholder="Expense name"
-                            disabled={item.id === "mortgage"}
-                          />
-                        </Label>
-                        {data.expenses.length > 1 && item.id !== "mortgage" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeExpenseItem(item.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {item.id === "mortgage" ? (
+                  {/* Mortgage Payment */}
+                  <div className="space-y-2 pb-4 border-b">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Mortgage Payment (Auto-calculated)
+                    </Label>
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900 font-semibold">
+                      {formatCurrency(calculateTotalMonthlyMortgageCost())}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Updates automatically from Mortgage Information section
+                    </p>
+                  </div>
+
+                  {data.expenses
+                    .filter((item) => item.id !== "mortgage")
+                    .map((item, index) => (
+                      <div key={item.id} className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <Label className="text-sm font-medium text-gray-700">
-                              Calculated Mortgage Payment
-                            </Label>
-                            <div className="mt-1 px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900">
-                              {formatCurrency(
-                                calculateTotalMonthlyMortgageCost()
-                              )}
-                            </div>
-                          </div>
+                          <Label
+                            htmlFor={`expense-name-${item.id}`}
+                            className="flex-1"
+                          >
+                            <Input
+                              id={`expense-name-${item.id}`}
+                              value={item.name}
+                              onChange={(e) =>
+                                updateExpenseItem(
+                                  item.id,
+                                  "name",
+                                  e.target.value
+                                )
+                              }
+                              className="text-sm font-medium"
+                              placeholder="Expense name"
+                            />
+                          </Label>
+                          {data.expenses.length > 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeExpenseItem(item.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
-                      ) : (
                         <CurrencyInput
                           id={`expense-amount-${item.id}`}
                           value={item.amount}
@@ -922,9 +1210,8 @@ export default function RetirementPlanner() {
                           }
                           placeholder="0"
                         />
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ))}
                   <Button
                     variant="outline"
                     onClick={addExpenseItem}
@@ -935,10 +1222,27 @@ export default function RetirementPlanner() {
                   </Button>
                 </>
               )}
-              <div className="pt-4 border-t">
-                <p className="text-lg font-semibold">
-                  Total Monthly Expenses: {formatCurrency(totalMonthlyExpenses)}
-                </p>
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Mortgage Payment:</span>
+                  <span className="font-medium">
+                    {formatCurrency(calculateTotalMonthlyMortgageCost())}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Other Expenses:</span>
+                  <span className="font-medium">
+                    {formatCurrency(otherExpensesTotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <p className="text-lg font-semibold">
+                    Total Monthly Expenses:
+                  </p>
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(totalMonthlyExpenses)}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
