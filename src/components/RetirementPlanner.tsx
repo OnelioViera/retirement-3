@@ -236,34 +236,48 @@ export default function RetirementPlanner() {
           // Ensure savingsYears is set
           planData.savingsYears = planData.savingsYears || 1;
 
-          // Migrate old mortgage field names to new monthly field names
-          if (planData.mortgage) {
-            if (planData.mortgage.propertyTax !== undefined) {
-              planData.mortgage.monthlyTax = planData.mortgage.propertyTax / 12;
-              delete planData.mortgage.propertyTax;
+          // Ensure mortgage object exists with all required fields
+          if (!planData.mortgage) {
+            planData.mortgage = {
+              current: 0,
+              future: 0,
+              downPayment: 0,
+              newMortgage: 0,
+              monthlyTax: 0,
+              monthlyInsurance: 0,
+              monthlyHOA: 0,
+              interestRate: 0,
+              financingYears: 30,
+            };
+          } else {
+            // Migrate old field names to new field names (if they exist)
+            const mortgage = planData.mortgage as any;
+            if (mortgage.propertyTax !== undefined && !mortgage.monthlyTax) {
+              planData.mortgage.monthlyTax = mortgage.propertyTax / 12;
             }
-            if (planData.mortgage.insurance !== undefined) {
-              planData.mortgage.monthlyInsurance =
-                planData.mortgage.insurance / 12;
-              delete planData.mortgage.insurance;
+            if (
+              mortgage.insurance !== undefined &&
+              !mortgage.monthlyInsurance
+            ) {
+              planData.mortgage.monthlyInsurance = mortgage.insurance / 12;
             }
-            if (planData.mortgage.hoa !== undefined) {
-              planData.mortgage.monthlyHOA = planData.mortgage.hoa;
-              delete planData.mortgage.hoa;
+            if (mortgage.hoa !== undefined && !mortgage.monthlyHOA) {
+              planData.mortgage.monthlyHOA = mortgage.hoa;
             }
-          }
 
-          // Force reset mortgage values to zero for clean start
-          if (planData.mortgage) {
-            planData.mortgage.current = 0;
-            planData.mortgage.future = 0;
-            planData.mortgage.downPayment = 0;
-            planData.mortgage.newMortgage = 0;
-            planData.mortgage.monthlyTax = 0;
-            planData.mortgage.monthlyInsurance = 0;
-            planData.mortgage.monthlyHOA = 0;
-            planData.mortgage.interestRate = 0;
-            planData.mortgage.financingYears = 30; // Keep reasonable default
+            // Set defaults for any missing fields (without overwriting existing values)
+            planData.mortgage.current = planData.mortgage.current ?? 0;
+            planData.mortgage.future = planData.mortgage.future ?? 0;
+            planData.mortgage.downPayment = planData.mortgage.downPayment ?? 0;
+            planData.mortgage.newMortgage = planData.mortgage.newMortgage ?? 0;
+            planData.mortgage.monthlyTax = planData.mortgage.monthlyTax ?? 0;
+            planData.mortgage.monthlyInsurance =
+              planData.mortgage.monthlyInsurance ?? 0;
+            planData.mortgage.monthlyHOA = planData.mortgage.monthlyHOA ?? 0;
+            planData.mortgage.interestRate =
+              planData.mortgage.interestRate ?? 0;
+            planData.mortgage.financingYears =
+              planData.mortgage.financingYears ?? 30;
           }
 
           setData(planData);

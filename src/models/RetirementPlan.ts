@@ -25,10 +25,11 @@ export interface IRetirementPlan extends Document {
     future: number;
     downPayment: number;
     newMortgage: number;
-    propertyTax: number;
-    insurance: number;
-    hoa: number;
+    monthlyTax: number;
+    monthlyInsurance: number;
+    monthlyHOA: number;
     interestRate: number;
+    financingYears: number;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -68,10 +69,11 @@ const RetirementPlanSchema = new Schema<IRetirementPlan>(
       future: { type: Number, default: 0 },
       downPayment: { type: Number, default: 0 },
       newMortgage: { type: Number, default: 0 },
-      propertyTax: { type: Number, default: 0 },
-      insurance: { type: Number, default: 0 },
-      hoa: { type: Number, default: 0 },
+      monthlyTax: { type: Number, default: 0 },
+      monthlyInsurance: { type: Number, default: 0 },
+      monthlyHOA: { type: Number, default: 0 },
       interestRate: { type: Number, default: 0 },
+      financingYears: { type: Number, default: 30 },
     },
   },
   {
