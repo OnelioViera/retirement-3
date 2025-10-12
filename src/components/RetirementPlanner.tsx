@@ -26,6 +26,8 @@ import {
   ChevronUp,
   Loader2,
   Download,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { formatCurrency, formatNumber } from "@/lib/utils";
@@ -858,6 +860,32 @@ export default function RetirementPlanner() {
     }));
   };
 
+  const moveExpenseUp = (id: string) => {
+    setData((prev) => {
+      const currentIndex = prev.expenses.findIndex((item) => item.id === id);
+      if (currentIndex <= 0) return prev; // Can't move up if first item or not found
+      
+      const newExpenses = [...prev.expenses];
+      [newExpenses[currentIndex - 1], newExpenses[currentIndex]] = 
+        [newExpenses[currentIndex], newExpenses[currentIndex - 1]];
+      
+      return { ...prev, expenses: newExpenses };
+    });
+  };
+
+  const moveExpenseDown = (id: string) => {
+    setData((prev) => {
+      const currentIndex = prev.expenses.findIndex((item) => item.id === id);
+      if (currentIndex === -1 || currentIndex >= prev.expenses.length - 1) return prev; // Can't move down if last item or not found
+      
+      const newExpenses = [...prev.expenses];
+      [newExpenses[currentIndex], newExpenses[currentIndex + 1]] = 
+        [newExpenses[currentIndex + 1], newExpenses[currentIndex]];
+      
+      return { ...prev, expenses: newExpenses };
+    });
+  };
+
   const updateSavingsItem = (
     id: string,
     field: "name" | "amount" | "type",
@@ -1168,7 +1196,12 @@ export default function RetirementPlanner() {
 
                   {data.expenses
                     .filter((item) => item.id !== "mortgage")
-                    .map((item, index) => (
+                    .map((item, index) => {
+                      const filteredExpenses = data.expenses.filter((e) => e.id !== "mortgage");
+                      const isFirst = index === 0;
+                      const isLast = index === filteredExpenses.length - 1;
+                      
+                      return (
                       <div key={item.id} className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Label
@@ -1192,12 +1225,34 @@ export default function RetirementPlanner() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => moveExpenseUp(item.id)}
+                            disabled={isFirst}
+                            className="text-blue-600 hover:text-blue-700 disabled:opacity-30"
+                            title="Move up"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => moveExpenseDown(item.id)}
+                            disabled={isLast}
+                            className="text-blue-600 hover:text-blue-700 disabled:opacity-30"
+                            title="Move down"
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => removeExpenseItem(item.id)}
                             className="text-red-600 hover:text-red-700"
+                            title="Remove expense"
                           >
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
+                      
                         <CurrencyInput
                           id={`expense-amount-${item.id}`}
                           value={item.amount}
@@ -1207,7 +1262,8 @@ export default function RetirementPlanner() {
                           placeholder="0"
                         />
                       </div>
-                    ))}
+                      );
+                    })}
                   <Button
                     variant="outline"
                     onClick={addExpenseItem}
